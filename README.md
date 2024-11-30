@@ -2,19 +2,19 @@
 
 Zabbix Template for Netskope API Rest V2 
 
-
 ## Description
 
 This template get information about Netskope from Netskope API Rest V2.
 
-## Templates (under development)
-- **Template Netskope Publishers API Rest V2**: 
+## Templates 
 
-## Netskope Tenant API 
+- **Template Netskope Publishers API Rest V2** 
 
-|API Endpoint|Permissions|
-|-|-|
-|`/api/v2/infrastructure/publishers`|Read|
+## Netskope Tenant API Permissions
+
+|Template|API Endpoint|Permissions|
+|-|-|-|
+|Template Netskope Publishers API Rest V2|`/api/v2/infrastructure/publishers`|Read|
 
 
 ## Configuration
@@ -28,5 +28,48 @@ Create a Host and assign template **Template Netskope Publishers API Rest V2** w
 
 ## Discovery
 
-Template will execute a discovery on Publishers endpoint each 1h and create items for each Publisher.
+Template will execute a discovery on Publishers API endpoint every 1h create items for each Publisher.
 
+![screenshot](images/Netskope-Publisher-Discovery.png)
+
+## Item Prototypes
+
+- Autoupgrade enabled
+- DTLS support
+- EEE Support
+- IP Address
+- Latency
+- LBrokerConnect
+- nwa ba
+- Registered
+- Status
+- Stitcher POP
+- Upgrade error code
+- Upgrade error detail
+- Upgrade requested
+- Upgrade status
+- Version
+- Version string
+
+![screenshot](images/Netskope-Publisher-ItemsPrototype.png)
+
+
+## Trigger Prototypes
+
+|Trigger|Severity|
+|-|-|
+|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] Autoupgrade changed|Warning|
+|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] DTLS Support changed|Informational|
+|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] EEE Support changed|Informational|
+|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] IP Address changed|Informational|
+|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] Latency is high|Warning|
+|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] No data on last 20m|Disaster|
+|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] not connected|High|
+|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] outdated (min version accepted v{$NETSKOPE.PUBLISHER.MIN_VERSION})|Warning|
+|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] upgrade error|Warning|
+
+![screenshot](images/Netskope-Publisher-TriggerPropotype.png)
+
+## Publisher example
+
+![screenshot](images/Netskope-Publisher-Items-Example.png)
