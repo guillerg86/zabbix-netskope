@@ -186,7 +186,6 @@ zabbix_export:
               name: '{#NETSKOPE.PUBLISHER.NAME}: Raw data'
               type: HTTP_AGENT
               key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
-              delay: 5m
               history: 5h
               value_type: TEXT
               trends: '0'
@@ -259,13 +258,13 @@ zabbix_export:
                   value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
               trigger_prototypes:
                 - uuid: 279ed1ca348842b19d4df866aad9f115
-                  expression: 'last(/Template Netskope Publishers API Rest V2/netskope.infra.publisher.latency[{#NETSKOPE.PUBLISHER.ID}])>{$NETSKOPE.PUBLISHER.LATENCY.WARNING_TRIGGER}'
+                  expression: 'avg(/Template Netskope Publishers API Rest V2/netskope.infra.publisher.latency[{#NETSKOPE.PUBLISHER.ID}],5m)>{$NETSKOPE.PUBLISHER.LATENCY.WARNING_TRIGGER}'
                   name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] Latency is high'
                   opdata: 'latency: {ITEM.LASTVALUE}'
                   priority: WARNING
                   manual_close: 'YES'
             - uuid: 00a104af79d647bbac62d12d12a420fb
-              name: '{#NETSKOPE.PUBLISHER.NAME}: LBrokerConnect'
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Local Broker Connect'
               type: DEPENDENT
               key: 'netskope.infra.publisher.lbrokerconnect[{#NETSKOPE.PUBLISHER.ID}]'
               delay: '0'
@@ -289,7 +288,7 @@ zabbix_export:
                 - tag: Application
                   value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
             - uuid: 78ec7b59e5d14046aa84de7691c0b5c2
-              name: '{#NETSKOPE.PUBLISHER.NAME}: nwa ba'
+              name: '{#NETSKOPE.PUBLISHER.NAME}: NewEdge Wan Architecture BA'
               type: DEPENDENT
               key: 'netskope.infra.publisher.nwa_ba[{#NETSKOPE.PUBLISHER.ID}]'
               delay: '0'
@@ -350,7 +349,7 @@ zabbix_export:
                     - $.status
                 - type: DISCARD_UNCHANGED_HEARTBEAT
                   parameters:
-                    - 1d
+                    - 4h
               master_item:
                 key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
               tags:
@@ -362,10 +361,14 @@ zabbix_export:
                   value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
               trigger_prototypes:
                 - uuid: 702489feee5343d3a9fefdf801d238d4
-                  expression: 'last(/Template Netskope Publishers API Rest V2/netskope.infra.publisher.status[{#NETSKOPE.PUBLISHER.ID}])<>"connected"'
+                  expression: 'last(/Template Netskope Publishers API Rest V2/netskope.infra.publisher.status[{#NETSKOPE.PUBLISHER.ID}])<>"connected" and last(/Template Netskope Publishers API Rest V2/netskope.infra.publisher.status[{#NETSKOPE.PUBLISHER.ID}])<>"updating"'
                   name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] not connected'
                   opdata: 'status: {ITEM.LASTVALUE}'
                   priority: HIGH
+                - uuid: 77f5892ef56746ff8c533959c4e30761
+                  expression: 'last(/Template Netskope Publishers API Rest V2/netskope.infra.publisher.status[{#NETSKOPE.PUBLISHER.ID}])="updating"'
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] updating'
+                  priority: INFO
             - uuid: 0e5f1a199f664243857188f7d9dba06e
               name: '{#NETSKOPE.PUBLISHER.NAME}: Stitcher POP'
               type: DEPENDENT
