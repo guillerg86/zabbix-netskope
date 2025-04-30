@@ -12,7 +12,7 @@ This template get information about Netskope Publishers from Netskope API Rest V
 
 ## Templates 
 
-- **Template Netskope Publishers by HTTPS SingleHost **
+- **Template Netskope Publishers by HTTPS SingleHost**
 - **Template Netskope Publishers by HTTPS MultiHost**
 - **Template Netskope Publisher Host by HTTPS**
 
