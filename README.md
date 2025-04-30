@@ -1,14 +1,20 @@
-# zabbix-netskope
+# Template Netskope Publisher Monitoring
 
-Zabbix Template for Netskope API Rest V2 
+There are 3 templates in this YAML
+
+- Template Netskope Publishers by HTTPS SingleHost
+- Template Netskope Publishers by HTTPS MultiHost (creates a Host for each publisher and adds the `Template Netskope Publisher Host by HTTPS`)
+- Template Netskope Publisher Host by HTTPS
 
 ## Description
 
-This template get information about Netskope from Netskope API Rest V2.
+This template get information about Netskope Publishers from Netskope API Rest V2.
 
 ## Templates 
 
-- **Template Netskope Publishers API Rest V2** 
+- **Template Netskope Publishers by HTTPS SingleHost **
+- **Template Netskope Publishers by HTTPS MultiHost**
+- **Template Netskope Publisher Host by HTTPS**
 
 ## Netskope Tenant API Permissions
 
@@ -73,3 +79,7 @@ Template will execute a discovery on Publishers API endpoint every 1h create ite
 ## Publisher example
 
 ![screenshot](images/Netskope-Publisher-Items-Example.png)
+
+## Dashboard example
+
+![screenshot](images/netskope-publisher-host-dashboard.png)

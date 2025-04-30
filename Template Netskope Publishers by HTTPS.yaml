@@ -1,0 +1,1609 @@
+zabbix_export:
+  version: '7.2'
+  template_groups:
+    - uuid: 1e2c2c2f2e224c51a2ee64d422aeb4b4
+      name: Templates/SaaS
+  host_groups:
+    - uuid: f20e18dd45d24fdeb7878f8c79a35f7e
+      name: Netskope
+  templates:
+    - uuid: b1526f7733f8466980eb25a87f163cd1
+      template: 'Template Netskope Publisher Host by HTTPS'
+      name: 'Template Netskope Publisher Host by HTTPS'
+      description: |
+        Template for Netskope Publishers using API Rest V2
+        
+        @author: Guille Rodriguez Gonzalez 
+        @github: https://github.com/guillerg86/
+        @linkedin: www.linkedin.com/in/guille-rodriguez-gonzalez
+      groups:
+        - name: Templates/SaaS
+      items:
+        - uuid: acb99cf382ab4bcea7ce81372e509868
+          name: 'Autoupgrade enabled'
+          type: DEPENDENT
+          key: netskope.infra.publisher.autoupgrade_enabled
+          history: 7d
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.capabilities.DTLS
+            - type: BOOL_TO_DECIMAL
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+          triggers:
+            - uuid: 69a7a952e2b742fdae29ac4c30030552
+              expression: 'change(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.autoupgrade_enabled)<>0'
+              recovery_mode: NONE
+              name: 'Autoupgrade changed'
+              opdata: 'status: {ITEM.LASTVALUE}'
+              priority: WARNING
+              type: MULTIPLE
+              manual_close: 'YES'
+        - uuid: dd221bdbb190445a885930f68a19df2c
+          name: 'DTLS support'
+          type: DEPENDENT
+          key: netskope.infra.publisher.DTLS
+          history: 7d
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.capabilities.DTLS
+            - type: BOOL_TO_DECIMAL
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+          triggers:
+            - uuid: 97e7319578e346e5a42bd8ca34b59c60
+              expression: 'change(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.DTLS)<>0'
+              recovery_mode: NONE
+              name: 'DTLS Support changed'
+              opdata: 'status: {ITEM.LASTVALUE}'
+              priority: INFO
+              type: MULTIPLE
+              manual_close: 'YES'
+        - uuid: 9ce9988da42047dc959b402d8bc4d628
+          name: 'EEE Support'
+          type: DEPENDENT
+          key: netskope.infra.publisher.EEE
+          history: 7d
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.capabilities.EEE
+            - type: BOOL_TO_DECIMAL
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+          triggers:
+            - uuid: 8c15698a65d44c8797bdce994a7be896
+              expression: 'change(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.EEE)<>0'
+              recovery_mode: NONE
+              name: 'EEE Support changed'
+              opdata: 'status: {ITEM.LASTVALUE}'
+              priority: INFO
+              type: MULTIPLE
+              manual_close: 'YES'
+        - uuid: 4a302ec7d801451484e23b2a743b8219
+          name: 'Raw data'
+          type: HTTP_AGENT
+          key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+          history: '0'
+          value_type: TEXT
+          description: 'Request for get data for the publisher {#NETSKOPE.PUBLISHER.NAME}'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.data
+          timeout: 10s
+          url: '{$NETSKOPE.TENANTURL}/api/v2/infrastructure/publishers/{$NETSKOPE.PUBLISHER.ID}'
+          headers:
+            - name: Netskope-Api-Token
+              value: '{$NETSKOPE.APITOKEN}'
+          triggers:
+            - uuid: f5ab986e122e4f37b04d587bdf9939e9
+              expression: 'nodata(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}],10m)=1'
+              name: 'No data on last 10m'
+              priority: DISASTER
+        - uuid: 79b5bf34e2c54ef49236b4a3fb69bff9
+          name: 'IP Address'
+          type: DEPENDENT
+          key: netskope.infra.publisher.ip_address
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.assessment.ip_address
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 24h
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+          triggers:
+            - uuid: 4eceb59102e940e49b4af567f9e7cbdb
+              expression: 'change(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.ip_address)<>0'
+              recovery_mode: NONE
+              name: 'IP Address changed'
+              opdata: 'status: {ITEM.LASTVALUE}'
+              priority: INFO
+              type: MULTIPLE
+              manual_close: 'YES'
+        - uuid: b2fea057e8f1478fbd0960dc49c178da
+          name: Latency
+          type: DEPENDENT
+          key: netskope.infra.publisher.latency
+          history: 7d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.assessment.latency
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+          triggers:
+            - uuid: 30bf7f84bf54459bbfdeda7ab070477d
+              expression: 'avg(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.latency,5m)>{$NETSKOPE.PUBLISHER.LATENCY.WARNING_TRIGGER}'
+              name: 'Latency is high'
+              opdata: 'latency: {ITEM.LASTVALUE}'
+              priority: WARNING
+              manual_close: 'YES'
+        - uuid: aeac9082fcb448e2abac0be32810d865
+          name: 'Local Broker Connect'
+          type: DEPENDENT
+          key: netskope.infra.publisher.lbrokerconnect
+          history: 7d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.lbrokerconnect
+            - type: BOOL_TO_DECIMAL
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+        - uuid: 9a84561e3a7f4a5eaa5fe4097a75639a
+          name: Name
+          type: DEPENDENT
+          key: netskope.infra.publisher.name
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.name
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 4h
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+        - uuid: 73e92fe904b84f2cbcccc3cf9bbb12a5
+          name: 'NewEdge Wan Architecture BA'
+          type: DEPENDENT
+          key: netskope.infra.publisher.nwa_ba
+          history: 7d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.capabilities.nwa_ba
+            - type: BOOL_TO_DECIMAL
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+        - uuid: 0e797d8515e94212a180720f3b7015ff
+          name: Registered
+          type: DEPENDENT
+          key: netskope.infra.publisher.registered
+          history: 7d
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.registered
+            - type: BOOL_TO_DECIMAL
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+        - uuid: 8e7f2aaf6cdc47a9afef123afccaa206
+          name: Status
+          type: DEPENDENT
+          key: netskope.infra.publisher.status
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 4h
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+          triggers:
+            - uuid: 3dc10c4e5a21402da71dcbfd59514a8c
+              expression: 'last(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.status)<>"connected" and last(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.status)<>"updating"'
+              name: 'Not connected'
+              opdata: 'status: {ITEM.LASTVALUE}'
+              priority: HIGH
+            - uuid: 77aa0fbafe4b450b8ecfcc36533ebc70
+              expression: 'last(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.status)="updating"'
+              name: Updating
+              priority: INFO
+        - uuid: 13f22e3cb641407cb69597e8b50772df
+          name: 'Stitcher POP'
+          type: DEPENDENT
+          key: netskope.infra.publisher.stitcher_pop
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.stitcher_pop
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 24h
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+        - uuid: 3b460b0e91d5478baccaa00ae8706f33
+          name: 'Upgrade error code'
+          type: DEPENDENT
+          key: netskope.infra.publisher.upgrade_error_code
+          history: 7d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.upgrade_failed_reason.error_code
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+          triggers:
+            - uuid: 286cca430e264618b4a1259d8d8416f0
+              expression: 'last(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.upgrade_error_code)<>0'
+              name: 'Upgrade error'
+              priority: WARNING
+        - uuid: c29cb0f7241b4755b3a9f8c51691341a
+          name: 'Upgrade error detail'
+          type: DEPENDENT
+          key: netskope.infra.publisher.upgrade_error_detail
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.upgrade_failed_reason.detail
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 24h
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+        - uuid: 5012be971fa348b7ab2a5d4ce7436e32
+          name: 'Upgrade requested'
+          type: DEPENDENT
+          key: netskope.infra.publisher.upgrade_request
+          history: 7d
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.upgrade_request
+            - type: BOOL_TO_DECIMAL
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+        - uuid: e6da205232684337a0f88677f504d2f5
+          name: 'Upgrade status'
+          type: DEPENDENT
+          key: netskope.infra.publisher.upgrade_status
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.upgrade_status.upstat
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 24h
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+        - uuid: 5f54e8432b844ee68b1140771c9fab5a
+          name: Version
+          type: DEPENDENT
+          key: netskope.infra.publisher.version
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.assessment.version
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 24h
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+        - uuid: faf53bc22ae2496dba5c2247d2b582fd
+          name: 'Version (float)'
+          type: DEPENDENT
+          key: netskope.infra.publisher.version_float
+          history: 7d
+          value_type: FLOAT
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.assessment.version
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = value.split(".")
+                  var version = data.shift()+"."+data.join('')
+                  return version
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+          triggers:
+            - uuid: d9aed517dfe046afba1ec0375397c73a
+              expression: 'last(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.version_float)<"<{$NETSKOPE.PUBLISHER.MIN_VERSION}"'
+              name: 'Outdated (min version accepted v{$NETSKOPE.PUBLISHER.MIN_VERSION})'
+              priority: WARNING
+      dashboards:
+        - uuid: 5c21cad118b7429a82568074f03b4306
+          name: PublisherInfo
+          pages:
+            - widgets:
+                - type: item
+                  name: Name
+                  width: '17'
+                  hide_header: 'YES'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: Name
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.name
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: item
+                  name: 'Local IP Address'
+                  'y': '2'
+                  width: '17'
+                  hide_header: 'YES'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: 'Local IP Address'
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.ip_address
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: item
+                  name: Version
+                  'y': '4'
+                  width: '17'
+                  hide_header: 'YES'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: Version
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.version
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: item
+                  name: 'Stitcher POP'
+                  'y': '6'
+                  width: '17'
+                  hide_header: 'YES'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: 'Stitcher POP'
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.stitcher_pop
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: svggraph
+                  name: 'Latency (ms)'
+                  x: '17'
+                  width: '55'
+                  height: '4'
+                  fields:
+                    - type: INTEGER
+                      name: ds.0.approximation
+                      value: '4'
+                    - type: STRING
+                      name: ds.0.color
+                      value: FF465C
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: Latency
+                    - type: INTEGER
+                      name: legend_statistic
+                      value: '1'
+                    - type: STRING
+                      name: reference
+                      value: HAEXA
+                    - type: INTEGER
+                      name: righty
+                      value: '0'
+                - type: item
+                  name: Status
+                  x: '17'
+                  'y': '4'
+                  width: '12'
+                  hide_header: 'YES'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: Status
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.status
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: item
+                  name: Registered
+                  x: '17'
+                  'y': '6'
+                  width: '12'
+                  hide_header: 'YES'
+                  fields:
+                    - type: STRING
+                      name: bg_color
+                      value: FFCA28
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: Registered
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.registered
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: 0EC9AC
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '1'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: item
+                  name: 'Upgrade status'
+                  x: '29'
+                  'y': '4'
+                  width: '11'
+                  hide_header: 'YES'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: 'Upgrade status'
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.upgrade_status
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: item
+                  name: Error
+                  x: '29'
+                  'y': '6'
+                  width: '11'
+                  hide_header: 'YES'
+                  fields:
+                    - type: STRING
+                      name: bg_color
+                      value: FFCA28
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: 'Upgrade error code'
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.upgrade_error_code
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: 0EC9AC
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '1'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: item
+                  name: 'Autoupgrade enabled'
+                  x: '40'
+                  'y': '4'
+                  width: '12'
+                  hide_header: 'YES'
+                  fields:
+                    - type: STRING
+                      name: bg_color
+                      value: FFCA28
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: 'Autoupgrade enabled'
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.autoupgrade_enabled
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: 0EC9AC
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '1'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: item
+                  name: 'Upgrade error message'
+                  x: '40'
+                  'y': '6'
+                  width: '32'
+                  hide_header: 'YES'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: 'Upgrade error details'
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.upgrade_error_detail
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: item
+                  name: 'DTLS Support'
+                  x: '52'
+                  'y': '4'
+                  width: '10'
+                  hide_header: 'YES'
+                  fields:
+                    - type: STRING
+                      name: bg_color
+                      value: FFCA28
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: 'DTLS Support'
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.DTLS
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: 0EC9AC
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '1'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+                - type: item
+                  name: 'EEE Support'
+                  x: '62'
+                  'y': '4'
+                  width: '10'
+                  hide_header: 'YES'
+                  fields:
+                    - type: STRING
+                      name: bg_color
+                      value: FFCA28
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '40'
+                    - type: STRING
+                      name: description
+                      value: 'EEE Support'
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '20'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Netskope Publisher Host by HTTPS'
+                        key: netskope.infra.publisher.EEE
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: 0EC9AC
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '1'
+                    - type: INTEGER
+                      name: units_bold
+                      value: '0'
+                    - type: INTEGER
+                      name: units_show
+                      value: '0'
+                    - type: INTEGER
+                      name: value_size
+                      value: '40'
+      valuemaps:
+        - uuid: 9fcd6573de5a434582efa9d59a3859ce
+          name: True-False
+          mappings:
+            - value: '0'
+              newvalue: 'False'
+            - value: '1'
+              newvalue: 'True'
+    - uuid: 6fe4d80f441f40ebba0f76e794bcb295
+      template: 'Template Netskope Publishers by HTTPS MultiHost'
+      name: 'Template Netskope Publishers by HTTPS MultiHost'
+      description: |
+        Template for Netskope Publishers using API Rest V2
+        
+        @author: Guille Rodriguez Gonzalez 
+        @github: https://github.com/guillerg86/
+        @linkedin: www.linkedin.com/in/guille-rodriguez-gonzalez
+        
+        Thanks to Jordi Rubió Jornet (https://www.linkedin.com/in/jordirj/) for helping me with some test and features
+      groups:
+        - name: Templates/SaaS
+      discovery_rules:
+        - uuid: 8292bf47e6ae40a4a0e567a54a930712
+          name: 'Netskope Publisher Discovery'
+          type: HTTP_AGENT
+          key: netskope.infra.publisher.discovery
+          delay: 1h
+          enabled_lifetime_type: DISABLE_AFTER
+          enabled_lifetime: 6h
+          description: 'Get all Publishers for Netskope Tenant'
+          host_prototypes:
+            - uuid: da047f9387e4469aa872b6351e0695ae
+              host: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              name: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              group_links:
+                - group:
+                    name: Netskope
+              templates:
+                - name: 'Template Netskope Publisher Host by HTTPS'
+              macros:
+                - macro: '{$NETSKOPE.PUBLISHER.ID}'
+                  value: '{#NETSKOPE.PUBLISHER.ID}'
+          timeout: 10s
+          url: '{$NETSKOPE.TENANTURL}/api/v2/infrastructure/publishers'
+          headers:
+            - name: Netskope-Api-Token
+              value: '{$NETSKOPE.APITOKEN}'
+          lld_macro_paths:
+            - lld_macro: '{#NETSKOPE.PUBLISHER.ID}'
+              path: $.publisher_id
+            - lld_macro: '{#NETSKOPE.PUBLISHER.NAME}'
+              path: $.publisher_name
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.data.publishers
+      macros:
+        - macro: '{$NETSKOPE.APITOKEN}'
+          description: 'Netskope Token'
+        - macro: '{$NETSKOPE.PUBLISHER.LATENCY.WARNING_TRIGGER}'
+          value: '80'
+          description: 'Value over it''s considered warning latency'
+        - macro: '{$NETSKOPE.PUBLISHER.MIN_VERSION}'
+          value: '120'
+          description: 'Minimum version of Publishers'
+        - macro: '{$NETSKOPE.TENANTURL}'
+          description: 'https://mytenant.eu.goskope.com'
+      valuemaps:
+        - uuid: 6296286d0d754acf8560041a505696fe
+          name: 'Publisher Upgrade Error'
+          mappings:
+            - value: '0'
+              newvalue: NoError
+            - value: '770'
+              newvalue: 'Newly downloaded version is the same'
+        - uuid: 553be71d2bdd47e181315cbfb9b554e7
+          name: True-False
+          mappings:
+            - value: '1'
+              newvalue: 'True'
+            - value: '0'
+              newvalue: 'False'
+    - uuid: 916e64713b544b6eab3b26c8e8c023e1
+      template: 'Template Netskope Publishers by HTTPS SingleHost'
+      name: 'Template Netskope Publishers by HTTPS SingleHost'
+      description: |
+        Template for Netskope Publishers using API Rest V2
+        
+        @author: Guille Rodriguez Gonzalez 
+        @github: https://github.com/guillerg86/
+        @linkedin: www.linkedin.com/in/guille-rodriguez-gonzalez
+        
+        Thanks to Jordi Rubió Jornet (https://www.linkedin.com/in/jordirj/) for helping me with some test and features
+      groups:
+        - name: Templates/SaaS
+      discovery_rules:
+        - uuid: 15196819109345eea8437bb03959c2ff
+          name: 'Netskope Publisher Discovery'
+          type: HTTP_AGENT
+          key: netskope.infra.publisher.discovery
+          delay: 1h
+          enabled_lifetime_type: DISABLE_AFTER
+          enabled_lifetime: 6h
+          description: 'Get all Publishers for Netskope Tenant'
+          item_prototypes:
+            - uuid: 342cbeba6fbe40a189542504ed5a4ca5
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Autoupgrade enabled'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.autoupgrade_enabled[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              valuemap:
+                name: True-False
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.capabilities.auto_upgrade
+                - type: BOOL_TO_DECIMAL
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              trigger_prototypes:
+                - uuid: 2ec98d352b5d4afab9b06bdf48e9e893
+                  expression: 'change(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.autoupgrade_enabled[{#NETSKOPE.PUBLISHER.ID}])<>0'
+                  recovery_mode: NONE
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] Autoupgrade changed'
+                  opdata: 'status: {ITEM.LASTVALUE}'
+                  priority: WARNING
+                  type: MULTIPLE
+                  manual_close: 'YES'
+            - uuid: d870789ef3494e5b80ad7c851e3be7d0
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Free Disk Space'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.disk.free[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              status: DISABLED
+              units: b
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.assessment.hdd_free
+                - type: REGEX
+                  parameters:
+                    - ^(\d+)
+                    - \1
+                - type: MULTIPLIER
+                  parameters:
+                    - '1024'
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: e85c6f0869234f3faff818490200cf85
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Total Disk Space'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.disk.total[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              status: DISABLED
+              units: b
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.assessment.hdd_total
+                - type: REGEX
+                  parameters:
+                    - ^(\d+)
+                    - \1
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value/1000;'
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: 463515fcb8264def948ce64d0c81604d
+              name: '{#NETSKOPE.PUBLISHER.NAME}: DTLS support'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.DTLS[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              valuemap:
+                name: True-False
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.capabilities.DTLS
+                - type: BOOL_TO_DECIMAL
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              trigger_prototypes:
+                - uuid: 964adcf7575743598f3962b70c0b55c9
+                  expression: 'change(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.DTLS[{#NETSKOPE.PUBLISHER.ID}])<>0'
+                  recovery_mode: NONE
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] DTLS Support changed'
+                  opdata: 'status: {ITEM.LASTVALUE}'
+                  priority: INFO
+                  type: MULTIPLE
+                  manual_close: 'YES'
+            - uuid: fb51fe50eac14827b6cdcbe190936fc7
+              name: '{#NETSKOPE.PUBLISHER.NAME}: EEE Support'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.EEE[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              valuemap:
+                name: True-False
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.capabilities.EEE
+                - type: BOOL_TO_DECIMAL
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              trigger_prototypes:
+                - uuid: ea94af015a944c27aa697d1eec46909f
+                  expression: 'change(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.EEE[{#NETSKOPE.PUBLISHER.ID}])<>0'
+                  recovery_mode: NONE
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] EEE Support changed'
+                  opdata: 'status: {ITEM.LASTVALUE}'
+                  priority: INFO
+                  type: MULTIPLE
+                  manual_close: 'YES'
+            - uuid: d0ee79e79cbf47159ed55e18413582f7
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Raw data'
+              type: HTTP_AGENT
+              key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 5h
+              value_type: TEXT
+              description: 'Request for get data for the publisher {#NETSKOPE.PUBLISHER.NAME}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.data
+              timeout: 10s
+              url: '{$NETSKOPE.TENANTURL}/api/v2/infrastructure/publishers/{#NETSKOPE.PUBLISHER.ID}'
+              headers:
+                - name: Netskope-Api-Token
+                  value: '{$NETSKOPE.APITOKEN}'
+              trigger_prototypes:
+                - uuid: 4009db218e4e4762b99d10ecb754a61b
+                  expression: 'nodata(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}],10m)=1'
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] No data on last 10m'
+                  priority: DISASTER
+            - uuid: be8eb809a4f14b79ae4154eef3913c0b
+              name: '{#NETSKOPE.PUBLISHER.NAME}: IP Address'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.ip_address[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 30d
+              value_type: CHAR
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.assessment.ip_address
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 24h
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              trigger_prototypes:
+                - uuid: f1bd67b96dd94dca982b6a6604865912
+                  expression: 'change(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.ip_address[{#NETSKOPE.PUBLISHER.ID}])<>0'
+                  recovery_mode: NONE
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] IP Address changed'
+                  opdata: 'status: {ITEM.LASTVALUE}'
+                  priority: INFO
+                  type: MULTIPLE
+                  manual_close: 'YES'
+            - uuid: 3bdc9fe2fcb848208fc56ec6087b0991
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Latency'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.latency[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.assessment.latency
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              trigger_prototypes:
+                - uuid: 279ed1ca348842b19d4df866aad9f115
+                  expression: 'avg(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.latency[{#NETSKOPE.PUBLISHER.ID}],5m)>{$NETSKOPE.PUBLISHER.LATENCY.WARNING_TRIGGER}'
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] Latency is high'
+                  opdata: 'latency: {ITEM.LASTVALUE}'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 00a104af79d647bbac62d12d12a420fb
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Local Broker Connect'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.lbrokerconnect[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              valuemap:
+                name: True-False
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.lbrokerconnect
+                - type: BOOL_TO_DECIMAL
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: 78ec7b59e5d14046aa84de7691c0b5c2
+              name: '{#NETSKOPE.PUBLISHER.NAME}: NewEdge Wan Architecture BA'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.nwa_ba[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              valuemap:
+                name: True-False
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.capabilities.nwa_ba
+                - type: BOOL_TO_DECIMAL
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: 2e502ec197304753a00dc9ff9fc33696
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Registered'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.registered[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              valuemap:
+                name: True-False
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.registered
+                - type: BOOL_TO_DECIMAL
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: 997fc99c5fe047309b029fd3f35239ba
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Status'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.status[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 30d
+              value_type: CHAR
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.status
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 4h
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              trigger_prototypes:
+                - uuid: 702489feee5343d3a9fefdf801d238d4
+                  expression: 'last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.status[{#NETSKOPE.PUBLISHER.ID}])<>"connected" and last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.status[{#NETSKOPE.PUBLISHER.ID}])<>"updating"'
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] not connected'
+                  opdata: 'status: {ITEM.LASTVALUE}'
+                  priority: HIGH
+                - uuid: 77f5892ef56746ff8c533959c4e30761
+                  expression: 'last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.status[{#NETSKOPE.PUBLISHER.ID}])="updating"'
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] updating'
+                  priority: INFO
+            - uuid: 0e5f1a199f664243857188f7d9dba06e
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Stitcher POP'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.stitcher_pop[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 30d
+              value_type: CHAR
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.stitcher_pop
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 24h
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: 81dedff29b9b4e34921812ae893172f0
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Upgrade error code'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.upgrade_error_code[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              valuemap:
+                name: 'Publisher Upgrade Error'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.upgrade_failed_reason.error_code
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              trigger_prototypes:
+                - uuid: 231a275680ec434db308fdd3ad77cd00
+                  expression: 'last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.upgrade_error_code[{#NETSKOPE.PUBLISHER.ID}])<>0 and last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.upgrade_error_code[{#NETSKOPE.PUBLISHER.ID}])<>770'
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] upgrade error'
+                  opdata: 'code:{ITEM.LASTVALUE}'
+                  priority: WARNING
+                  description: |
+                    0 = No error code
+                    770 = newly downloaded is the same as installed
+            - uuid: 1ce116e62daf4e57ac99254621960035
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Upgrade error detail'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.upgrade_error_detail[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 30d
+              value_type: CHAR
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.upgrade_failed_reason.detail
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: aafabd08073d4b86992e9093758c4879
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Upgrade requested'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.upgrade_request[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              valuemap:
+                name: True-False
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.upgrade_request
+                - type: BOOL_TO_DECIMAL
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: d610b0e417974f89a42826afacdc04eb
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Upgrade status'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.upgrade_status[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 30d
+              value_type: CHAR
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.upgrade_status.upstat
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 24h
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: 715d27b7088a47479597747a1e2167b0
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Version'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.version[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 30d
+              value_type: CHAR
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.assessment.version
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: 1d1fb3ef18b0403fa862c300d3df0bbf
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Version (float)'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.version_float[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 30d
+              value_type: FLOAT
+              trends: '0'
+              description: 'Float value of Version String'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.assessment.version
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var data = value.split(".")
+                      var version = data.shift()+"."+data.join('')
+                      return version
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              trigger_prototypes:
+                - uuid: 25d1c01b44514b84ab14849d404be6f1
+                  expression: 'last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.version_float[{#NETSKOPE.PUBLISHER.ID}])<{$NETSKOPE.PUBLISHER.MIN_VERSION}'
+                  name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] outdated (min version accepted v{$NETSKOPE.PUBLISHER.MIN_VERSION})'
+                  opdata: 'actual version: {ITEM.LASTVALUE}'
+                  priority: WARNING
+                  manual_close: 'YES'
+          timeout: 10s
+          url: '{$NETSKOPE.TENANTURL}/api/v2/infrastructure/publishers'
+          headers:
+            - name: Netskope-Api-Token
+              value: '{$NETSKOPE.APITOKEN}'
+          lld_macro_paths:
+            - lld_macro: '{#NETSKOPE.PUBLISHER.ID}'
+              path: $.publisher_id
+            - lld_macro: '{#NETSKOPE.PUBLISHER.NAME}'
+              path: $.publisher_name
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.data.publishers
+      macros:
+        - macro: '{$NETSKOPE.APITOKEN}'
+          description: 'Netskope Token'
+        - macro: '{$NETSKOPE.PUBLISHER.LATENCY.WARNING_TRIGGER}'
+          value: '80'
+          description: 'Value over it''s considered warning latency'
+        - macro: '{$NETSKOPE.PUBLISHER.MIN_VERSION}'
+          value: '120'
+          description: 'Minimum version of Publishers'
+        - macro: '{$NETSKOPE.TENANTURL}'
+          description: 'https://mytenant.eu.goskope.com'
+      valuemaps:
+        - uuid: a204fc80a1584648b38748394c6d83c1
+          name: 'Publisher Upgrade Error'
+          mappings:
+            - value: '0'
+              newvalue: NoError
+            - value: '770'
+              newvalue: 'Newly downloaded version is the same'
+        - uuid: 934802f9b705476fb3782c537c004778
+          name: True-False
+          mappings:
+            - value: '1'
+              newvalue: 'True'
+            - value: '0'
+              newvalue: 'False'
