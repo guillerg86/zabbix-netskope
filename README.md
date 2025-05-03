@@ -1,85 +1,151 @@
-# Template Netskope Publisher Monitoring
 
-There are 3 templates in this YAML
+# Netskope Publisher Monitoring for Zabbix
 
-- Template Netskope Publishers by HTTPS SingleHost
-- Template Netskope Publishers by HTTPS MultiHost (creates a Host for each publisher and adds the `Template Netskope Publisher Host by HTTPS`)
-- Template Netskope Publisher Host by HTTPS
+This repository provides Zabbix templates and a Python script to monitor **Netskope Publishers** efficiently, avoiding excessive API usage and preventing HTTP 429 (Too Many Requests) errors.
 
-## Description
+---
 
-This template get information about Netskope Publishers from Netskope API Rest V2.
+## 🧩 Templates Overview
 
-## Templates 
+### Template Netskope Publishers by HTTPS.yaml
 
-- **Template Netskope Publishers by HTTPS SingleHost**
-- **Template Netskope Publishers by HTTPS MultiHost**
-- **Template Netskope Publisher Host by HTTPS**
+This file contains three templates:
 
-## Netskope Tenant API Permissions
+- **Template Netskope Publishers by HTTPS SingleHost**  
+  Ideal for tenants with many publishers. Makes only **one API call** and processes all publishers as a single host.
 
-|Template|API Endpoint|Permissions|
-|-|-|-|
-|Template Netskope Publishers API Rest V2|`/api/v2/infrastructure/publishers`|Read|
+- **Template Netskope Publishers by HTTPS MultiHost**  
+  Discovers each publisher and creates a dedicated Zabbix host per publisher. Links with the host-level template.
 
+- **Template Netskope Publisher Host by HTTPS**  
+  Contains individual item and trigger prototypes for each discovered publisher.
 
-## Configuration
+---
 
-Create a Host and assign template **Template Netskope Publishers API Rest V2** with one interface Agent (127.0.0.1) and set macros value
+### `Template Netskope Publishers by ExternalScript.yaml`
 
-|Macro|Value|Description|
-|-|-|-|
-|`{$NETSKOPE.TENANTURL}`|https://mytenant.eu.goskope.com|Base URL of your Netskope tenant|
-|`{$NETSKOPE.APITOKEN}`|`xxxxxxxxxxxxxxxxxxxxxx`|API Token Generated on Netskope tenant|
+This file contains two templates:
 
-## Discovery
+- **Template Netskope Publishers by ExternalScript MultiHost**  
+  Uses a local script for discovery. Avoids API rate limits by caching data and creating one host per publisher.
 
-Template will execute a discovery on Publishers API endpoint every 1h create items for each Publisher.
+- **Template Netskope Publisher Host by ExternalScript**  
+  Used for item and trigger prototypes per individual publisher.
 
-![screenshot](images/Netskope-Publisher-Discovery.png)
+---
 
-## Item Prototypes
+## 🔍 Template Purpose
 
-- Autoupgrade enabled
+These templates use the **Netskope REST API v2** to monitor the state and performance of publishers. The `ExternalScript` version is optimized for large environments by limiting API calls to one per minute.
+
+---
+
+## 🔐 API Permissions Required
+
+| Template | Endpoint | Permission |
+|----------|----------|------------|
+| All      | `/api/v2/infrastructure/publishers` | Read        |
+
+---
+
+## ⚙️ Configuration
+
+### HTTPS Templates
+
+1. **Create a host in Zabbix.**
+2. **Assign the template:** `Template Netskope Publishers by HTTPS SingleHost` or `MultiHost`.
+3. **Set the required macros:**
+
+| Macro | Value | Description |
+|-------|-------|-------------|
+| `{$NETSKOPE.TENANTURL}` | `https://mytenant.eu.goskope.com` | Your tenant base URL |
+| `{$NETSKOPE.APITOKEN}` | `xxxxxxxxxxxxxxxxxxxxx` | API Token from Netskope UI |
+
+---
+
+### ExternalScript Templates
+
+1. **Install the script on the Zabbix Server or Proxy:**
+
+```bash
+cp zabbix_netskope_publishers.py /usr/lib/zabbix/externalscripts/
+chmod +x /usr/lib/zabbix/externalscripts/zabbix_netskope_publishers.py
+```
+
+2. **Test the script manually:**
+
+```bash
+./zabbix_netskope_publishers.py -a get-publishers -au "https://mytenant.eu.goskope.com" -ak "my_api_token"
+```
+
+A file like `/tmp/publishers-mytenant_eu_goskope_com.json` will be created.
+
+3. **Query a single publisher (using an ID from the JSON):**
+
+```bash
+./zabbix_netskope_publishers.py -a get-publisher -pid <PUBLISHER_ID> -au "https://mytenant.eu.goskope.com" -ak "my_api_token"
+```
+
+You should see the corresponding JSON output in the terminal.
+
+---
+
+## 🔁 Discovery
+
+- Runs **every hour**.
+- Queries the publishers endpoint.
+- Creates one host per discovered publisher (MultiHost templates only).
+
+![Discovery Screenshot](images/Netskope-Publisher-Discovery.png)
+
+---
+
+## 📦 Item Prototypes
+
+Each publisher includes monitoring for:
+
+- Auto-upgrade enabled
 - DTLS support
-- EEE Support
-- IP Address
+- EEE support
+- IP address
 - Latency
 - LBrokerConnect
 - nwa ba
-- Registered
-- Status
+- Registration status
+- Connection status
 - Stitcher POP
-- Upgrade error code
-- Upgrade error detail
-- Upgrade requested
-- Upgrade status
-- Version
-- Version string
+- Upgrade error code & detail
+- Upgrade requested & status
+- Version & version string
 
-![screenshot](images/Netskope-Publisher-ItemsPrototype.png)
+![Items Screenshot](images/Netskope-Publisher-ItemsPrototype.png)
 
+---
 
-## Trigger Prototypes
+## 🚨 Trigger Prototypes
 
-|Trigger|Severity|
-|-|-|
-|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] Autoupgrade changed|Warning|
-|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] DTLS Support changed|Informational|
-|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] EEE Support changed|Informational|
-|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] IP Address changed|Informational|
-|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] Latency is high|Warning|
-|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] No data on last 20m|Disaster|
-|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] not connected|High|
-|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] outdated (min version accepted v{$NETSKOPE.PUBLISHER.MIN_VERSION})|Warning|
-|Publisher \[{#NETSKOPE.PUBLISHER.NAME}\] upgrade error|Warning|
+| Trigger | Severity |
+|---------|----------|
+| Autoupgrade changed | Warning |
+| DTLS Support changed | Info |
+| EEE Support changed | Info |
+| IP Address changed | Info |
+| High latency | Warning |
+| No data in 20 minutes | Disaster |
+| Not connected | High |
+| Outdated version (min v{$NETSKOPE.PUBLISHER.MIN_VERSION}) | Warning |
+| Upgrade error | Warning |
 
-![screenshot](images/Netskope-Publisher-TriggerPropotype.png)
+![Triggers Screenshot](images/Netskope-Publisher-TriggerPropotype.png)
 
-## Publisher example
+---
 
-![screenshot](images/Netskope-Publisher-Items-Example.png)
+## 🖥️ Example: Publisher View
 
-## Dashboard example
+![Example Publisher](images/Netskope-Publisher-Items-Example.png)
 
-![screenshot](images/netskope-publisher-host-dashboard.png)
+---
+
+## 📊 Example: Dashboard
+
+![Dashboard](images/netskope-publisher-host-dashboard.png)
