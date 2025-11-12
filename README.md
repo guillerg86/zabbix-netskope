@@ -3,11 +3,12 @@
 
 This repository provides Zabbix templates and a Python script to monitor **Netskope Publishers** efficiently, avoiding excessive API usage and preventing HTTP 429 (Too Many Requests) errors.
 
+
 ---
 
 ## 🧩 Templates Overview
 
-### Template Netskope Publishers by HTTPS.yaml
+### 🛡️ Template Netskope Publishers by HTTPS.yaml
 
 This file contains three templates:
 
@@ -22,7 +23,7 @@ This file contains three templates:
 
 ---
 
-### `Template Netskope Publishers by ExternalScript.yaml`
+### 📜 Template Netskope Publishers by ExternalScript.yaml
 
 This file contains two templates:
 
@@ -149,3 +150,17 @@ Each publisher includes monitoring for:
 ## 📊 Example: Dashboard
 
 ![Dashboard](images/netskope-publisher-host-dashboard.png)
+
+
+# Releases 
+
+### 2025-11-12 - Fix
+- **Trigger Publisher upgrade error (code: x):** The Upgrade error alert/trigger does not close when the publisher has been successfully updated and that error message is no longer present in the response JSON. This happened because the error fields only appear when there is an actual error; if not, they do not exist. Therefore, when trying to access the field, it failed and did not store the new information. It has been forced so that if the field does not exist, it assigns a value of 0, which means “No error.”
+- Templates tested on Zabbix 7.4
+
+### 2025-05-03 - Refactor + FIX
+- Avoid HTTP 429 to many requests
+- Refactor and created more templates (single host, multi host)
+
+### 2024-11-30 - First version
+- First template 

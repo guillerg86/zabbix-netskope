@@ -1,5 +1,5 @@
 zabbix_export:
-  version: '7.2'
+  version: '7.4'
   template_groups:
     - uuid: 1e2c2c2f2e224c51a2ee64d422aeb4b4
       name: Templates/SaaS
@@ -42,6 +42,46 @@ zabbix_export:
               priority: WARNING
               type: MULTIPLE
               manual_close: 'YES'
+        - uuid: 9edb4613dc624784bcbf7e97b7d44dbe
+          name: 'Disk free space'
+          type: DEPENDENT
+          key: netskope.infra.publisher.disk.free
+          history: 7d
+          units: B
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.assessment.hdd_free
+            - type: REGEX
+              parameters:
+                - ^(\d+)
+                - \1
+          master_item:
+            key: 'zabbix_netskope_publishers.py[-a,"get-publisher",-pid,{$NETSKOPE.PUBLISHER.ID},-au,"{$NETSKOPE.TENANTURL}",-ak,"{$NETSKOPE.APITOKEN}"]'
+        - uuid: 67f2ad83b6274140b6fe84b96903f57c
+          name: 'Disk total space'
+          type: DEPENDENT
+          key: netskope.infra.publisher.disk.total
+          history: 7d
+          units: B
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.assessment.hdd_total
+            - type: REGEX
+              parameters:
+                - ^(\d+)
+                - \1
+          master_item:
+            key: 'zabbix_netskope_publishers.py[-a,"get-publisher",-pid,{$NETSKOPE.PUBLISHER.ID},-au,"{$NETSKOPE.TENANTURL}",-ak,"{$NETSKOPE.APITOKEN}"]'
+        - uuid: 5eb2cac6fd42483695b6df2c49ee042c
+          name: 'Disk used space percentage'
+          type: CALCULATED
+          key: netskope.infra.publisher.disk.used_percentage
+          history: 7d
+          value_type: FLOAT
+          units: '%'
+          params: '100*(last(//netskope.infra.publisher.disk.total)-last(//netskope.infra.publisher.disk.free))/last(//netskope.infra.publisher.disk.total)'
         - uuid: 764542e0b9cf48b0a95ee7050f3d5143
           name: 'DTLS support'
           type: DEPENDENT
@@ -88,6 +128,21 @@ zabbix_export:
               priority: INFO
               type: MULTIPLE
               manual_close: 'YES'
+        - uuid: f8c789c933774406897206882c9c36f2
+          name: 'Host OS'
+          type: DEPENDENT
+          key: netskope.infra.publisher.host_os_version
+          history: 7d
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.assessment.host_os_version
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+          master_item:
+            key: 'zabbix_netskope_publishers.py[-a,"get-publisher",-pid,{$NETSKOPE.PUBLISHER.ID},-au,"{$NETSKOPE.TENANTURL}",-ak,"{$NETSKOPE.APITOKEN}"]'
         - uuid: 3b1146f455564d2bab5fd114584029c0
           name: 'IP Address'
           type: DEPENDENT
@@ -228,6 +283,8 @@ zabbix_export:
             - type: JSONPATH
               parameters:
                 - $.upgrade_failed_reason.error_code
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
           master_item:
             key: 'zabbix_netskope_publishers.py[-a,"get-publisher",-pid,{$NETSKOPE.PUBLISHER.ID},-au,"{$NETSKOPE.TENANTURL}",-ak,"{$NETSKOPE.APITOKEN}"]'
           triggers:
@@ -244,6 +301,7 @@ zabbix_export:
             - type: JSONPATH
               parameters:
                 - $.upgrade_failed_reason.detail
+              error_handler: CUSTOM_VALUE
             - type: DISCARD_UNCHANGED_HEARTBEAT
               parameters:
                 - 24h
@@ -340,9 +398,6 @@ zabbix_export:
                     - type: INTEGER
                       name: decimal_places
                       value: '0'
-                    - type: INTEGER
-                      name: decimal_size
-                      value: '40'
                     - type: STRING
                       name: description
                       value: Name
@@ -374,7 +429,7 @@ zabbix_export:
                       value: '0'
                     - type: INTEGER
                       name: value_size
-                      value: '40'
+                      value: '35'
                 - type: item
                   name: 'Local IP Address'
                   'y': '2'
@@ -991,25 +1046,25 @@ zabbix_export:
         - uuid: d6526373747b4ad9a4c27b5b7d63cb91
           name: 'Publishers file generated'
           type: EXTERNAL
-          key: 'zabbix_netskope_publishers.py[-a,"get-publishers",-au,"{$NETSKOPE.TENANTURL}",-ak,"{$NETSKOPE.APITOKEN}"]'
+          key: 'zabbix_netskope_publishers.py[-a,"get-publishers",-au,"{$NETSKOPE.TENANTURL}",-ak,"{$NETSKOPE.APITOKEN}","--prefix",{$NETSKOPE.PUBLISHER.PREFIX}]'
           history: 1h
           triggers:
             - uuid: 81d58850bb4b435ba2172e7c0aafea35
-              expression: 'nodata(/Template Netskope Publishers by ExternalScript MultiHost/zabbix_netskope_publishers.py[-a,"get-publishers",-au,"{$NETSKOPE.TENANTURL}",-ak,"{$NETSKOPE.APITOKEN}"],5m)=1'
+              expression: 'nodata(/Template Netskope Publishers by ExternalScript MultiHost/zabbix_netskope_publishers.py[-a,"get-publishers",-au,"{$NETSKOPE.TENANTURL}",-ak,"{$NETSKOPE.APITOKEN}","--prefix",{$NETSKOPE.PUBLISHER.PREFIX}],5m)=1'
               name: 'No file generated for more than 5m'
               priority: DISASTER
       discovery_rules:
         - uuid: 39524b06522f47fe9fdbae484448ed55
           name: 'Netskope Publisher Discovery'
-          type: HTTP_AGENT
-          key: netskope.infra.publisher.discovery
+          type: EXTERNAL
+          key: 'zabbix_netskope_publishers.py["--prefix","{$NETSKOPE.PUBLISHER.PREFIX}",-a,"get-publishers",-au,"{$NETSKOPE.TENANTURL}",-ak,"{$NETSKOPE.APITOKEN}",--console]'
           delay: 1h
           enabled_lifetime_type: DISABLE_AFTER
           enabled_lifetime: 6h
           description: 'Get all Publishers for Netskope Tenant'
           host_prototypes:
             - uuid: 8af928e97ab6476c8a19acecc5cb3c31
-              host: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+              host: 'netskope-publisher-{#NETSKOPE.PUBLISHER.TENANT}-{#NETSKOPE.PUBLISHER.ID}'
               name: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
               group_links:
                 - group:
@@ -1023,19 +1078,13 @@ zabbix_export:
               interfaces:
                 - {  }
           timeout: 10s
-          url: '{$NETSKOPE.TENANTURL}/api/v2/infrastructure/publishers'
-          headers:
-            - name: Netskope-Api-Token
-              value: '{$NETSKOPE.APITOKEN}'
           lld_macro_paths:
             - lld_macro: '{#NETSKOPE.PUBLISHER.ID}'
               path: $.publisher_id
             - lld_macro: '{#NETSKOPE.PUBLISHER.NAME}'
               path: $.publisher_name
-          preprocessing:
-            - type: JSONPATH
-              parameters:
-                - $.data.publishers
+            - lld_macro: '{#NETSKOPE.PUBLISHER.TENANT}'
+              path: $.tenant
       macros:
         - macro: '{$NETSKOPE.APITOKEN}'
           description: 'Netskope Token'
@@ -1048,6 +1097,8 @@ zabbix_export:
         - macro: '{$NETSKOPE.PUBLISHER.MIN_VERSION}'
           value: '120'
           description: 'Minimum version of Publishers'
+        - macro: '{$NETSKOPE.PUBLISHER.PREFIX}'
+          description: 'Used as prefix in visible name of the host prototype'
         - macro: '{$NETSKOPE.TENANTURL}'
           description: 'https://mytenant.eu.goskope.com'
       valuemaps:

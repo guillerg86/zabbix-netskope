@@ -1,5 +1,5 @@
 zabbix_export:
-  version: '7.2'
+  version: '7.4'
   template_groups:
     - uuid: 1e2c2c2f2e224c51a2ee64d422aeb4b4
       name: Templates/SaaS
@@ -42,6 +42,46 @@ zabbix_export:
               priority: WARNING
               type: MULTIPLE
               manual_close: 'YES'
+        - uuid: 5fc07e37652a41fe853ca9af717875ed
+          name: 'Disk used space percentage'
+          type: CALCULATED
+          key: netskope.infra.publisher.disk.used_percentage
+          history: 7d
+          value_type: FLOAT
+          units: '%'
+          params: '100*(last(//netskope.infra.publisher.disk.total)-last(//netskope.infra.publisher.disk.free))/last(//netskope.infra.publisher.disk.total)'
+        - uuid: 0a659a6a2f4040328425321f7eb4462d
+          name: 'Disk free space'
+          type: DEPENDENT
+          key: netskope.infra.publisher.disk_free
+          history: 7d
+          units: B
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.assessment.hdd_free
+            - type: REGEX
+              parameters:
+                - ^(\d+)
+                - \1
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
+        - uuid: 1dd30298231e4f339cc3e0829169cb5d
+          name: 'Disk total space'
+          type: DEPENDENT
+          key: netskope.infra.publisher.disk_total
+          history: 7d
+          units: B
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.assessment.hdd_total
+            - type: REGEX
+              parameters:
+                - ^(\d+)
+                - \1
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
         - uuid: dd221bdbb190445a885930f68a19df2c
           name: 'DTLS support'
           type: DEPENDENT
@@ -109,6 +149,21 @@ zabbix_export:
               expression: 'nodata(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}],10m)=1'
               name: 'No data on last 10m'
               priority: DISASTER
+        - uuid: 3d6de236dd1045d684ca86de4cdb0c25
+          name: 'Host OS'
+          type: DEPENDENT
+          key: netskope.infra.publisher.host_os_version
+          history: 7d
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.assessment.host_os_version
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+          master_item:
+            key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
         - uuid: 79b5bf34e2c54ef49236b4a3fb69bff9
           name: 'IP Address'
           type: DEPENDENT
@@ -249,6 +304,8 @@ zabbix_export:
             - type: JSONPATH
               parameters:
                 - $.upgrade_failed_reason.error_code
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
           master_item:
             key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
           triggers:
@@ -265,6 +322,7 @@ zabbix_export:
             - type: JSONPATH
               parameters:
                 - $.upgrade_failed_reason.detail
+              error_handler: CUSTOM_VALUE
             - type: DISCARD_UNCHANGED_HEARTBEAT
               parameters:
                 - 24h
@@ -1132,12 +1190,11 @@ zabbix_export:
                   type: MULTIPLE
                   manual_close: 'YES'
             - uuid: d870789ef3494e5b80ad7c851e3be7d0
-              name: '{#NETSKOPE.PUBLISHER.NAME}: Free Disk Space'
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Disk free space'
               type: DEPENDENT
               key: 'netskope.infra.publisher.disk.free[{#NETSKOPE.PUBLISHER.ID}]'
               history: 7d
-              status: DISABLED
-              units: b
+              units: B
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1146,9 +1203,6 @@ zabbix_export:
                   parameters:
                     - ^(\d+)
                     - \1
-                - type: MULTIPLIER
-                  parameters:
-                    - '1024'
               master_item:
                 key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
               tags:
@@ -1159,12 +1213,11 @@ zabbix_export:
                 - tag: Application
                   value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
             - uuid: e85c6f0869234f3faff818490200cf85
-              name: '{#NETSKOPE.PUBLISHER.NAME}: Total Disk Space'
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Disk total space'
               type: DEPENDENT
               key: 'netskope.infra.publisher.disk.total[{#NETSKOPE.PUBLISHER.ID}]'
               history: 7d
-              status: DISABLED
-              units: b
+              units: B
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1173,9 +1226,6 @@ zabbix_export:
                   parameters:
                     - ^(\d+)
                     - \1
-                - type: JAVASCRIPT
-                  parameters:
-                    - 'return value/1000;'
               master_item:
                 key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
               tags:
@@ -1185,6 +1235,27 @@ zabbix_export:
                   value: 'Netskope Publisher'
                 - tag: Application
                   value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
+            - uuid: f6378a615e7641589f9a4ab4c3989eb5
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Disk used space percentage'
+              type: CALCULATED
+              key: 'netskope.infra.publisher.disk.used_percentage[{#NETSKOPE.PUBLISHER.ID}]'
+              delay: 5m
+              units: '%'
+              params: '100*(last(//netskope.infra.publisher.disk.total[{#NETSKOPE.PUBLISHER.ID}])-last(//netskope.infra.publisher.disk.free[{#NETSKOPE.PUBLISHER.ID}]))/last(//netskope.infra.publisher.disk.total[{#NETSKOPE.PUBLISHER.ID}])'
+              trigger_prototypes:
+                - uuid: a5b395a7011e4f03a186b73b74ef646f
+                  expression: 'last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.disk.used_percentage[{#NETSKOPE.PUBLISHER.ID}])>80'
+                  name: 'Disk space is over 80%'
+                  opdata: '{ITEM.LASTVALUE}%'
+                  priority: WARNING
+                  dependencies:
+                    - name: 'Disk space is over 90%'
+                      expression: 'last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.disk.used_percentage[{#NETSKOPE.PUBLISHER.ID}])>90'
+                - uuid: 6b6022f83d934007a01da23eef3ad1e5
+                  expression: 'last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.disk.used_percentage[{#NETSKOPE.PUBLISHER.ID}])>90'
+                  name: 'Disk space is over 90%'
+                  opdata: '{ITEM.LASTVALUE}%'
+                  priority: HIGH
             - uuid: 463515fcb8264def948ce64d0c81604d
               name: '{#NETSKOPE.PUBLISHER.NAME}: DTLS support'
               type: DEPENDENT
@@ -1269,6 +1340,28 @@ zabbix_export:
                   dependencies:
                     - name: 'No Publishers data for more than 5min'
                       expression: 'nodata(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publishers.raw,5m)=1'
+            - uuid: 0e89e70b00c64aa9957de22bc2f08b4f
+              name: '{#NETSKOPE.PUBLISHER.NAME}: Host OS'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.host_os_version[{#NETSKOPE.PUBLISHER.ID}]'
+              history: 7d
+              value_type: CHAR
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.assessment.host_os_version
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope Publisher'
+                - tag: Application
+                  value: 'Netskope Publisher {#NETSKOPE.PUBLISHER.NAME}'
             - uuid: be8eb809a4f14b79ae4154eef3913c0b
               name: '{#NETSKOPE.PUBLISHER.NAME}: IP Address'
               type: DEPENDENT
@@ -1453,6 +1546,8 @@ zabbix_export:
                 - type: JSONPATH
                   parameters:
                     - $.upgrade_failed_reason.error_code
+                  error_handler: CUSTOM_VALUE
+                  error_handler_params: '0'
               master_item:
                 key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.PUBLISHER.ID}]'
               tags:
@@ -1481,6 +1576,7 @@ zabbix_export:
                 - type: JSONPATH
                   parameters:
                     - $.upgrade_failed_reason.detail
+                  error_handler: CUSTOM_VALUE
                 - type: DISCARD_UNCHANGED_HEARTBEAT
                   parameters:
                     - 1d
