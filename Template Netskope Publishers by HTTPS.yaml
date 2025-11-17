@@ -1075,7 +1075,7 @@ zabbix_export:
                 - macro: '{$NETSKOPE.PUBLISHER.ID}'
                   value: '{#NETSKOPE.PUBLISHER.ID}'
           timeout: 10s
-          url: '{$NETSKOPE.TENANTURL}/api/v2/infrastructure/publishers'
+          url: '{$NETSKOPE.TENANTURL}/api/v2/infrastructure/publishers?fields=publisher_id,publisher_name,common_name'
           headers:
             - name: Netskope-Api-Token
               value: '{$NETSKOPE.APITOKEN}'
@@ -1689,7 +1689,7 @@ zabbix_export:
                   priority: WARNING
                   manual_close: 'YES'
           timeout: 10s
-          url: '{$NETSKOPE.TENANTURL}/api/v2/infrastructure/publishers'
+          url: '{$NETSKOPE.TENANTURL}/api/v2/infrastructure/publishers?fields=publisher_id,publisher_name,common_name'
           headers:
             - name: Netskope-Api-Token
               value: '{$NETSKOPE.APITOKEN}'
