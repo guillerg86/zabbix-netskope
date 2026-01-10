@@ -1,0 +1,263 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 1e2c2c2f2e224c51a2ee64d422aeb4b4
+      name: Templates/SaaS
+  templates:
+    - uuid: 18c6b103ecda44b7bdbf8406aaf94301
+      template: 'Template Netskope Enrollment Tokens by HTTPS'
+      name: 'Template Netskope Enrollment Tokens by HTTPS'
+      description: |
+        Template for Netskope Enrollment Tokens using API Rest V2
+        
+        @author: Guille Rodriguez Gonzalez 
+        @github: https://github.com/guillerg86/
+        @linkedin: www.linkedin.com/in/guille-rodriguez-gonzalez
+      groups:
+        - name: Templates/SaaS
+      items:
+        - uuid: 2d4ae2ad4fe1487caca177bbe93def7e
+          name: 'Netskope Enrollment Tokens Raw Data'
+          type: HTTP_AGENT
+          key: netskope.enrollment_tokens.raw
+          delay: 5m
+          history: 1h
+          value_type: TEXT
+          description: 'Get all Publishers data for Netskope Tenant'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var arr = JSON.parse(value);
+                  for (var i = 0; i < arr.length; i++) {
+                      var obj = arr[i];
+                      if (obj && typeof obj === 'object') {
+                          // Eliminar claves si existen
+                          if (obj.hasOwnProperty('auth_token')) {
+                              delete obj.auth_token;
+                          }
+                          if (obj.hasOwnProperty('encrypt_token')) {
+                              delete obj.encrypt_token;
+                          }
+                      }
+                  }
+                  return JSON.stringify(arr);
+          url: '{$NETSKOPE.TENANTURL}/api/v2/enrollment/tokenset'
+          headers:
+            - name: Netskope-Api-Token
+              value: '{$NETSKOPE.APITOKEN}'
+          triggers:
+            - uuid: 9e092daa48c542e289631d43436a6bee
+              expression: 'nodata(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_tokens.raw,20m)=1'
+              name: 'No Publishers data for more than 20min'
+              priority: DISASTER
+              description: 'No data from API. Check token or url'
+      discovery_rules:
+        - uuid: fd2b783199774ec2aa3f7294454946f9
+          name: 'Netskope Enrollment Tokens Discovery'
+          type: HTTP_AGENT
+          key: netskope.enrollment_tokens.discovery
+          delay: 1h
+          enabled_lifetime_type: DISABLE_AFTER
+          enabled_lifetime: 6h
+          description: 'Get all Enrollment Tokens Information for Netskope Tenant'
+          item_prototypes:
+            - uuid: c7a6c2808df94ce195e2c2013acfd22a
+              name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}: Created date'
+              type: DEPENDENT
+              key: 'netskope.enrollment_token.created_date[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]'
+              history: 7d
+              units: unixtime
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.created_date
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return unixTimeSec = Math.floor(new Date(value).getTime() / 1000);'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope EnrollToken'
+                - tag: Application
+                  value: 'Netskope EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}'
+            - uuid: ff8c0ac0f75147c587bab9aca582e2ad
+              name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}: Days to expiration'
+              type: CALCULATED
+              key: 'netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]'
+              history: 7d
+              params: '(last( //netskope.enrollment_token.valid_till[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) - now() ) / 86400'
+              trigger_prototypes:
+                - uuid: f565bfcc7f094de98b503d030aa5a6df
+                  expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < 0'
+                  name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} is expired'
+                  opdata: '{ITEM.LASTVALUE}d remaining'
+                  priority: DISASTER
+                  description: 'Add a new token if you need, change the expiration date or just remove'
+                  manual_close: 'YES'
+                - uuid: 62fb951110c84403a647d8906e460778
+                  expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < 1'
+                  name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} will expire in less than 24h'
+                  opdata: '{ITEM.LASTVALUE}d remaining'
+                  priority: DISASTER
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} is expired'
+                      expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < 0'
+                - uuid: 8d9a0657940f4314a2b6c52828daf7ca
+                  expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < {$NETSKOPE.ENROLLTOKEN.DAYS_AVERAGE}'
+                  name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} will expire soon'
+                  opdata: '{ITEM.LASTVALUE}d remaining'
+                  priority: AVERAGE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} will expire soon'
+                      expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < {$NETSKOPE.ENROLLTOKEN.DAYS_HIGH}'
+                - uuid: 3291ced863b24dd294f3d52f9b28cde6
+                  expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < {$NETSKOPE.ENROLLTOKEN.DAYS_HIGH}'
+                  name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} will expire soon'
+                  opdata: '{ITEM.LASTVALUE}d remaining'
+                  priority: HIGH
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} will expire in less than 24h'
+                      expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < 1'
+                - uuid: 77917564421c4f228e6a095c13165b62
+                  expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < {$NETSKOPE.ENROLLTOKEN.DAYS_INFO}'
+                  name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} will expire soon'
+                  opdata: '{ITEM.LASTVALUE}d remaining'
+                  priority: INFO
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} will expire soon'
+                      expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < {$NETSKOPE.ENROLLTOKEN.DAYS_WARN}'
+                - uuid: 25b0d20ca89044dfb08968bee50ac78b
+                  expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < {$NETSKOPE.ENROLLTOKEN.DAYS_WARN}'
+                  name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} will expire soon'
+                  opdata: '{ITEM.LASTVALUE}d remaining'
+                  priority: WARNING
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} will expire soon'
+                      expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < {$NETSKOPE.ENROLLTOKEN.DAYS_AVERAGE}'
+            - uuid: db97bf18c84a4d3091ae26ce59c8ac6e
+              name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}: Enforce Status'
+              type: DEPENDENT
+              key: 'netskope.enrollment_token.enforce_status[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]'
+              history: 7d
+              valuemap:
+                name: True-False
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.enforce_status
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope EnrollToken'
+                - tag: Application
+                  value: 'Netskope EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}'
+              trigger_prototypes:
+                - uuid: 69ab328c6f4b4dd18fca3b6b7e4d0220
+                  expression: 'change(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.enforce_status[{#NETSKOPE.ENROLLMENT_TOKEN.ID}])<>0'
+                  recovery_mode: NONE
+                  name: 'EnrollToken ID {#NETSKOPE.ENROLLMENT_TOKEN.ID}: Enforce status changed'
+                  opdata: 'status: {ITEM.LASTVALUE}'
+                  priority: DISASTER
+                  type: MULTIPLE
+                  manual_close: 'YES'
+            - uuid: cd81299a51344af49cc0209e3d74806c
+              name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}: Expiration date'
+              type: DEPENDENT
+              key: 'netskope.enrollment_token.valid_till[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]'
+              history: 7d
+              trends: '0'
+              units: unixtime
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.valid_till
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      if ( value === "null" || value == null || value === undefined) {
+                      	// return "9999-01-01T23:59:59.999Z" in unixtime -> 253402300799
+                      	return 253402300799;
+                      }
+                      return value
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]'
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope EnrollToken'
+                - tag: Application
+                  value: 'Netskope EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}'
+            - uuid: 382b69c64b514729b7494e84c3b3331c
+              name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}: Raw data'
+              type: DEPENDENT
+              key: 'netskope.infra.publisher.get_raw[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]'
+              history: 5h
+              value_type: TEXT
+              description: 'Request for get data for the Enrollment Token with ID {#NETSKOPE.ENROLLMENT_TOKEN.ID}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.tsid=={#NETSKOPE.ENROLLMENT_TOKEN.ID})]'
+                - type: JSONPATH
+                  parameters:
+                    - '$[0]'
+              master_item:
+                key: netskope.enrollment_tokens.raw
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope EnrollToken'
+              trigger_prototypes:
+                - uuid: 944003e80307475596a0947096f3f826
+                  expression: 'nodata(/Template Netskope Enrollment Tokens by HTTPS/netskope.infra.publisher.get_raw[{#NETSKOPE.ENROLLMENT_TOKEN.ID}],3m)=1'
+                  name: 'EnrollToken ID {#NETSKOPE.ENROLLMENT_TOKEN.ID}: No data on last 3m'
+                  priority: DISASTER
+          timeout: 10s
+          url: '{$NETSKOPE.TENANTURL}/api/v2/enrollment/tokenset'
+          headers:
+            - name: Netskope-Api-Token
+              value: '{$NETSKOPE.APITOKEN}'
+          lld_macro_paths:
+            - lld_macro: '{#NETSKOPE.ENROLLMENT_TOKEN.ID}'
+              path: $.tsid
+      macros:
+        - macro: '{$NETSKOPE.APITOKEN}'
+          description: 'Netskope Token'
+        - macro: '{$NETSKOPE.ENROLLTOKEN.DAYS_AVERAGE}'
+          value: '15'
+        - macro: '{$NETSKOPE.ENROLLTOKEN.DAYS_HIGH}'
+          value: '5'
+        - macro: '{$NETSKOPE.ENROLLTOKEN.DAYS_INFO}'
+          value: '60'
+        - macro: '{$NETSKOPE.ENROLLTOKEN.DAYS_WARN}'
+          value: '30'
+        - macro: '{$NETSKOPE.TENANTURL}'
+          description: 'https://mytenant.eu.goskope.com'
+      valuemaps:
+        - uuid: 57b2ef79e30e4846872221273bd4d601
+          name: True-False
+          mappings:
+            - value: '1'
+              newvalue: 'True'
+            - value: '0'
+              newvalue: 'False'

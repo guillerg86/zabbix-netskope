@@ -1,166 +1,107 @@
+# Netskope Monitoring Templates for Zabbix
 
-# Netskope Publisher Monitoring for Zabbix
+This repository provides a collection of **Zabbix templates** to monitor key **Netskope infrastructure components** using the **Netskope REST API v2**.  
+The goal is to offer reliable visibility while **minimizing API usage** and avoiding rate-limit issues.
 
-This repository provides Zabbix templates and a Python script to monitor **Netskope Publishers** efficiently, avoiding excessive API usage and preventing HTTP 429 (Too Many Requests) errors.
+Currently, the repository includes monitoring for:
 
+- **Netskope Publishers**
+- **Netskope Enrollment Tokens**
 
----
-
-## 🧩 Templates Overview
-
-### 🛡️ Template Netskope Publishers by HTTPS.yaml
-
-This file contains three templates:
-
-- **Template Netskope Publishers by HTTPS SingleHost**  
-  Ideal for tenants with many publishers. Makes only **one API call** and processes all publishers as a single host.
-
-- **Template Netskope Publishers by HTTPS MultiHost**  
-  Discovers each publisher and creates a dedicated Zabbix host per publisher. Links with the host-level template.
-
-- **Template Netskope Publisher Host by HTTPS**  
-  Contains individual item and trigger prototypes for each discovered publisher.
+Each component has its own dedicated template and detailed README.
 
 ---
 
-### 📜 Template Netskope Publishers by ExternalScript.yaml
+## 📦 Included Templates
 
-This file contains two templates:
+### 🛡️ Netskope Publishers Monitoring
 
-- **Template Netskope Publishers by ExternalScript MultiHost**  
-  Uses a local script for discovery. Avoids API rate limits by caching data and creating one host per publisher.
+Templates designed to monitor the health, connectivity and versioning of Netskope Publishers.
 
-- **Template Netskope Publisher Host by ExternalScript**  
-  Used for item and trigger prototypes per individual publisher.
+**Features:**
+- Publisher discovery (SingleHost and MultiHost)
+- Status and connectivity monitoring
+- Version and upgrade monitoring
+- Optimized API usage
+- Optional ExternalScript mode to avoid HTTP 429
+
+**Templates:**
+- `Template Netskope Publishers by HTTPS SingleHost`
+- `Template Netskope Publishers by HTTPS MultiHost`
+- `Template Netskope Publisher Host by HTTPS`
+- `Template Netskope Publishers by ExternalScript MultiHost`
+- `Template Netskope Publisher Host by ExternalScript`
+
+📄 See: `Publishers/README.md`
 
 ---
 
-## 🔍 Template Purpose
+### 🔑 Netskope Enrollment Tokens Monitoring
 
-These templates use the **Netskope REST API v2** to monitor the state and performance of publishers. The `ExternalScript` version is optimized for large environments by limiting API calls to one per minute.
+Template focused on monitoring **Enrollment Tokens** used for device onboarding.
+
+**Features:**
+- Enrollment token discovery
+- Expiration date tracking
+- Macro-based expiration thresholds
+- Enforce status monitoring
+- Alerts for expired and near-expiration tokens
+
+**Template:**
+- `Template Netskope Enrollment Tokens by HTTPS`
+
+📄 See: `Enrollment Tokens/README.md`
 
 ---
 
 ## 🔐 API Permissions Required
 
-| Template | Endpoint | Permission |
-|----------|----------|------------|
-| All      | `/api/v2/infrastructure/publishers` | Read        |
+| Component | Endpoint | Permission |
+|---------|----------|------------|
+| Publishers | `/api/v2/infrastructure/publishers` | Read |
+| Enrollment Tokens | `/api/v2/enrollment/tokenset` | Read |
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Common Configuration
 
-### HTTPS Templates
+All HTTPS-based templates require the following macros:
 
-1. **Create a host in Zabbix.**
-2. **Assign the template:** `Template Netskope Publishers by HTTPS SingleHost` or `MultiHost`.
-3. **Set the required macros:**
+| Macro | Description |
+|------|-------------|
+| `{$NETSKOPE.TENANTURL}` | Netskope tenant base URL |
+| `{$NETSKOPE.APITOKEN}` | Netskope API token |
 
-| Macro | Value | Description |
-|-------|-------|-------------|
-| `{$NETSKOPE.TENANTURL}` | `https://mytenant.eu.goskope.com` | Your tenant base URL |
-| `{$NETSKOPE.APITOKEN}` | `xxxxxxxxxxxxxxxxxxxxx` | API Token from Netskope UI |
+Additional macros are documented in each template README.
 
 ---
 
-### ExternalScript Templates
+## 🎯 Design Principles
 
-1. **Install the script on the Zabbix Server or Proxy:**
-
-```bash
-cp zabbix_netskope_publishers.py /usr/lib/zabbix/externalscripts/
-chmod +x /usr/lib/zabbix/externalscripts/zabbix_netskope_publishers.py
-```
-
-2. **Test the script manually:**
-
-```bash
-./zabbix_netskope_publishers.py -a get-publishers -au "https://mytenant.eu.goskope.com" -ak "my_api_token"
-```
-
-A file like `/tmp/publishers-mytenant_eu_goskope_com.json` will be created.
-
-3. **Query a single publisher (using an ID from the JSON):**
-
-```bash
-./zabbix_netskope_publishers.py -a get-publisher -pid <PUBLISHER_ID> -au "https://mytenant.eu.goskope.com" -ak "my_api_token"
-```
-
-You should see the corresponding JSON output in the terminal.
+- Read-only monitoring (no API modifications)
+- API usage optimization
+- Macro-driven thresholds
+- Scalable for large tenants
+- Zabbix native discovery and prototypes
 
 ---
 
-## 🔁 Discovery
+## 📦 Compatibility
 
-- Runs **every hour**.
-- Queries the publishers endpoint.
-- Creates one host per discovered publisher (MultiHost templates only).
-
-![Discovery Screenshot](images/Netskope-Publisher-Discovery.png)
+- Zabbix **7.4**
+- Netskope **REST API v2**
 
 ---
 
-## 📦 Item Prototypes
+## 📁 Repository Structure
 
-Each publisher includes monitoring for:
-
-- Auto-upgrade enabled
-- DTLS support
-- EEE support
-- IP address
-- Latency
-- LBrokerConnect
-- nwa ba
-- Registration status
-- Connection status
-- Stitcher POP
-- Upgrade error code & detail
-- Upgrade requested & status
-- Version & version string
-
-![Items Screenshot](images/Netskope-Publisher-ItemsPrototype.png)
-
----
-
-## 🚨 Trigger Prototypes
-
-| Trigger | Severity |
-|---------|----------|
-| Autoupgrade changed | Warning |
-| DTLS Support changed | Info |
-| EEE Support changed | Info |
-| IP Address changed | Info |
-| High latency | Warning |
-| No data in 20 minutes | Disaster |
-| Not connected | High |
-| Outdated version (min v{$NETSKOPE.PUBLISHER.MIN_VERSION}) | Warning |
-| Upgrade error | Warning |
-
-![Triggers Screenshot](images/Netskope-Publisher-TriggerPropotype.png)
-
----
-
-## 🖥️ Example: Publisher View
-
-![Example Publisher](images/Netskope-Publisher-Items-Example.png)
-
----
-
-## 📊 Example: Dashboard
-
-![Dashboard](images/netskope-publisher-host-dashboard.png)
-
-
-# Releases 
-
-### 2025-11-12 - Fix
-- **Trigger Publisher upgrade error (code: x):** The Upgrade error alert/trigger does not close when the publisher has been successfully updated and that error message is no longer present in the response JSON. This happened because the error fields only appear when there is an actual error; if not, they do not exist. Therefore, when trying to access the field, it failed and did not store the new information. It has been forced so that if the field does not exist, it assigns a value of 0, which means “No error.”
-- Templates tested on Zabbix 7.4
-
-### 2025-05-03 - Refactor + FIX
-- Avoid HTTP 429 to many requests
-- Refactor and created more templates (single host, multi host)
-
-### 2024-11-30 - First version
-- First template 
+```text
+.
+├── publishers/
+│   ├── Template Netskope Publishers by HTTPS.yaml
+│   ├── Template Netskope Publishers by ExternalScript.yaml
+│   └── README.md
+├── enrollment_tokens/
+│   ├── Template Netskope Enrollment Tokens by HTTPS.yaml
+│   └── README.md
+└── README.md
