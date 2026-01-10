@@ -93,6 +93,17 @@ zabbix_export:
               key: 'netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]'
               history: 7d
               params: '(last( //netskope.enrollment_token.valid_till[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) - now() ) / 86400'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: Application
+                  value: Netskope
+                - tag: Application
+                  value: 'Netskope EnrollToken'
+                - tag: Application
+                  value: 'Netskope EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}'
               trigger_prototypes:
                 - uuid: f565bfcc7f094de98b503d030aa5a6df
                   expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < 0'
@@ -229,8 +240,8 @@ zabbix_export:
                   value: 'Netskope EnrollToken'
               trigger_prototypes:
                 - uuid: 944003e80307475596a0947096f3f826
-                  expression: 'nodata(/Template Netskope Enrollment Tokens by HTTPS/netskope.infra.publisher.get_raw[{#NETSKOPE.ENROLLMENT_TOKEN.ID}],3m)=1'
-                  name: 'EnrollToken ID {#NETSKOPE.ENROLLMENT_TOKEN.ID}: No data on last 3m'
+                  expression: 'nodata(/Template Netskope Enrollment Tokens by HTTPS/netskope.infra.publisher.get_raw[{#NETSKOPE.ENROLLMENT_TOKEN.ID}],20m)=1'
+                  name: 'EnrollToken ID {#NETSKOPE.ENROLLMENT_TOKEN.ID}: No data on last 20m'
                   priority: DISASTER
           timeout: 10s
           url: '{$NETSKOPE.TENANTURL}/api/v2/enrollment/tokenset'
