@@ -200,11 +200,11 @@ zabbix_export:
                 - type: JAVASCRIPT
                   parameters:
                     - |
-                      if ( value === "null" || value == null || value === undefined) {
-                      	// return "9999-01-01T23:59:59.999Z" in unixtime -> 253402300799
-                      	return 253402300799;
+                      var ts = Date.parse(value);
+                      if (isNaN(ts)) {
+                      	return Math.floor(new Date("9999-01-01T00:00:00.000Z").getTime() / 1000);
                       }
-                      return value
+                      return (ts/1000);
                 - type: DISCARD_UNCHANGED_HEARTBEAT
                   parameters:
                     - 1d
