@@ -59,7 +59,7 @@ Template focused on monitoring **Enrollment Tokens** used for device onboarding.
 | Component | Endpoint | Permission |
 |---------|----------|------------|
 | Publishers | `/api/v2/infrastructure/publishers` | Read |
-| Enrollment Tokens | `/api/v2/enrollment/tokenset` | Read |
+| Enrollment Tokens | `/api/v2/enrollment/tokenset` | Write |
 
 ---
 
@@ -78,7 +78,6 @@ Additional macros are documented in each template README.
 
 ## 🎯 Design Principles
 
-- Read-only monitoring (no API modifications)
 - API usage optimization
 - Macro-driven thresholds
 - Scalable for large tenants

@@ -34,7 +34,7 @@ Enrollment Tokens are critical for onboarding devices into Netskope. This templa
 
 | Endpoint | Permission |
 |--------|------------|
-| `/api/v2/enrollment/tokenset` | Read |
+| `/api/v2/enrollment/tokenset` | Write |
 
 ---
 
@@ -83,7 +83,7 @@ Enrollment Tokens are critical for onboarding devices into Netskope. This templa
 | EnrollToken *will expire soon* | Days to expiration < `{$NETSKOPE.ENROLLTOKEN.DAYS_WARN}` | Warning |
 | EnrollToken *will expire soon* | Days to expiration < `{$NETSKOPE.ENROLLTOKEN.DAYS_INFO}` | Info |
 | EnrollToken *Enforce status changed* | Enforce status value changed | Warning |
-| EnrollToken *No data on last 20m* | No data for 20 minutes | Disaster |
+| EnrollToken *Token deleted or no data on last 20m* | No data for 20 minutes | Disaster |
 
 ---
 
