@@ -98,14 +98,14 @@ zabbix_export:
               name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}: Days to expiration'
               type: CALCULATED
               key: 'netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]'
-              delay: 8h
+              delay: 1h
               history: 7d
               value_type: FLOAT
               params: '(last( //netskope.enrollment_token.valid_till[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) - now() ) / 86400'
               preprocessing:
-                - type: DISCARD_UNCHANGED_HEARTBEAT
+                - type: JAVASCRIPT
                   parameters:
-                    - 1d
+                    - 'return Number(value).toFixed(1);'
               tags:
                 - tag: Application
                   value: Netskope
@@ -150,7 +150,7 @@ zabbix_export:
                 - uuid: 77917564421c4f228e6a095c13165b62
                   expression: 'last(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.days_to_expiration[{#NETSKOPE.ENROLLMENT_TOKEN.ID}]) < {$NETSKOPE.ENROLLTOKEN.DAYS_INFO}'
                   name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} will expire soon'
-                  opdata: '{ITEM.LASTVALUE}d remaining'
+                  opdata: '{ITEM.LASTVALUE}d left'
                   priority: INFO
                   manual_close: 'YES'
                   dependencies:
@@ -255,8 +255,12 @@ zabbix_export:
               trigger_prototypes:
                 - uuid: 944003e80307475596a0947096f3f826
                   expression: 'nodata(/Template Netskope Enrollment Tokens by HTTPS/netskope.infra.publisher.get_raw[{#NETSKOPE.ENROLLMENT_TOKEN.ID}],20m)=1'
-                  name: 'EnrollToken ID {#NETSKOPE.ENROLLMENT_TOKEN.ID}: No data on last 20m'
+                  name: 'EnrollToken ID {#NETSKOPE.ENROLLMENT_TOKEN.ID}: Token deleted or No data on last 20m'
                   priority: DISASTER
+                  description: 'If the token is deleted then will be removed automatically after 6h.'
+                  dependencies:
+                    - name: 'No Publishers data for more than 20min'
+                      expression: 'nodata(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_tokens.raw,20m)=1'
           timeout: 10s
           url: '{$NETSKOPE.TENANTURL}/api/v2/enrollment/tokenset'
           headers:
@@ -278,6 +282,76 @@ zabbix_export:
           value: '30'
         - macro: '{$NETSKOPE.TENANTURL}'
           description: 'https://mytenant.eu.goskope.com'
+      dashboards:
+        - uuid: 64c77831f07b4c7da068d84492b3f2e5
+          name: 'Netskope EnrollTokens'
+          display_period: '600'
+          pages:
+            - widgets:
+                - type: problems
+                  width: '48'
+                  height: '4'
+                  fields:
+                    - type: STRING
+                      name: reference
+                      value: YKTGQ
+                    - type: INTEGER
+                      name: show_opdata
+                      value: '2'
+                - type: honeycomb
+                  name: 'Token expiration days'
+                  x: '48'
+                  width: '24'
+                  height: '4'
+                  fields:
+                    - type: STRING
+                      name: items.0
+                      value: 'EnrollToken * expiration'
+                    - type: STRING
+                      name: primary_label
+                      value: 'Days left'
+                    - type: STRING
+                      name: reference
+                      value: KDGJA
+                    - type: INTEGER
+                      name: secondary_label_decimal_places
+                      value: '1'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: E45959
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '-1000'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: E97659
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '1'
+                    - type: STRING
+                      name: thresholds.2.color
+                      value: FFA059
+                    - type: STRING
+                      name: thresholds.2.threshold
+                      value: '5'
+                    - type: STRING
+                      name: thresholds.3.color
+                      value: FFC859
+                    - type: STRING
+                      name: thresholds.3.threshold
+                      value: '15'
+                    - type: STRING
+                      name: thresholds.4.color
+                      value: 7499FF
+                    - type: STRING
+                      name: thresholds.4.threshold
+                      value: '30'
+                    - type: STRING
+                      name: thresholds.5.color
+                      value: 66BB6A
+                    - type: STRING
+                      name: thresholds.5.threshold
+                      value: '60'
       valuemaps:
         - uuid: 57b2ef79e30e4846872221273bd4d601
           name: True-False
