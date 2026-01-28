@@ -279,6 +279,8 @@ zabbix_export:
           type: DEPENDENT
           key: netskope.infra.publisher.upgrade_error_code
           history: 7d
+          valuemap:
+            name: 'Publisher Upgrade Error'
           preprocessing:
             - type: JSONPATH
               parameters:
@@ -289,8 +291,10 @@ zabbix_export:
             key: 'zabbix_netskope_publishers.py[-a,"get-publisher",-pid,{$NETSKOPE.PUBLISHER.ID},-au,"{$NETSKOPE.TENANTURL}",-ak,"{$NETSKOPE.APITOKEN}"]'
           triggers:
             - uuid: a7dd235fb47f467f87ba88b5bc029d0e
-              expression: 'last(/Template Netskope Publisher Host by ExternalScript/netskope.infra.publisher.upgrade_error_code)<>0'
+              expression: 'last(/Template Netskope Publisher Host by ExternalScript/netskope.infra.publisher.upgrade_error_code)<>0 and last(/Template Netskope Publisher Host by ExternalScript/netskope.infra.publisher.upgrade_error_code)<>770'
               name: 'Upgrade error'
+              url_name: 'Netskope Docs Publisher Error Codes'
+              url: 'https://docs.netskope.com/en/configure-publisher-auto-updates#error-codes-for-publisher-auto-update'
               priority: WARNING
         - uuid: e1f8dfa54d844b08a8656b87902407c9
           name: 'Upgrade error detail'
@@ -1022,6 +1026,49 @@ zabbix_export:
                       name: value_size
                       value: '40'
       valuemaps:
+        - uuid: 46844012cbed404b889dd6a2c9d9a337
+          name: 'Publisher Upgrade Error'
+          mappings:
+            - value: '0'
+              newvalue: 'Publisher is up-to-date.'
+            - value: '256'
+              newvalue: 'Auto-update failed. Contact Netskope Support'
+            - value: '257'
+              newvalue: 'Auto-update failed. Check logs/publisher_wizard.log'
+            - value: '258'
+              newvalue: 'Auto-update failed due to timeout.'
+            - value: '259'
+              newvalue: 'Reconnection failed due to timeout.'
+            - value: '512'
+              newvalue: 'Host OS update failed'
+            - value: '513'
+              newvalue: 'Auto-update failed while upgrading Docker engine'
+            - value: '514'
+              newvalue: 'Host OS update failed.'
+            - value: '515'
+              newvalue: 'Host OS update failed.'
+            - value: '516'
+              newvalue: 'Host OS update failed.'
+            - value: '517'
+              newvalue: 'Host OS update failed.'
+            - value: '518'
+              newvalue: 'Host OS update failed.'
+            - value: '519'
+              newvalue: 'Not enough disk space for the publisher Host OS update.'
+            - value: '768'
+              newvalue: 'Auto-update failed'
+            - value: '769'
+              newvalue: 'Auto-update failed while downloading docker image'
+            - value: '770'
+              newvalue: 'Newly downloaded version is the same'
+            - value: '771'
+              newvalue: 'Auto-update failed while attempting to stop the existing Publish'
+            - value: '773'
+              newvalue: 'Auto-update failed while attempting to install the Publisher UI'
+            - value: '774'
+              newvalue: 'Publisher auto-update failed. Check logs/publisher_wizard.log'
+            - value: '775'
+              newvalue: 'Publisher auto-update failed. Check logs/publisher_wizard.log'
         - uuid: 80efab7e98f04f7aae74672e64587307
           name: True-False
           mappings:

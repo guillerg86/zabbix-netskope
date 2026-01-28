@@ -300,6 +300,8 @@ zabbix_export:
           type: DEPENDENT
           key: netskope.infra.publisher.upgrade_error_code
           history: 7d
+          valuemap:
+            name: 'Publisher Upgrade Error'
           preprocessing:
             - type: JSONPATH
               parameters:
@@ -310,8 +312,10 @@ zabbix_export:
             key: 'netskope.infra.publisher.get_raw[{$NETSKOPE.TENANTURL},{$NETSKOPE.PUBLISHER.ID}]'
           triggers:
             - uuid: 286cca430e264618b4a1259d8d8416f0
-              expression: 'last(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.upgrade_error_code)<>0'
+              expression: 'last(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.upgrade_error_code)<>0 and last(/Template Netskope Publisher Host by HTTPS/netskope.infra.publisher.upgrade_error_code)<>770'
               name: 'Upgrade error'
+              url_name: 'Netskope Docs Publisher Error Codes'
+              url: 'https://docs.netskope.com/en/configure-publisher-auto-updates#error-codes-for-publisher-auto-update'
               priority: WARNING
         - uuid: c29cb0f7241b4755b3a9f8c51691341a
           name: 'Upgrade error detail'
@@ -1033,6 +1037,49 @@ zabbix_export:
                       name: value_size
                       value: '40'
       valuemaps:
+        - uuid: f6ff2bf6aa854d7ab5031de05c92610c
+          name: 'Publisher Upgrade Error'
+          mappings:
+            - value: '0'
+              newvalue: 'Publisher is up-to-date.'
+            - value: '256'
+              newvalue: 'Auto-update failed. Contact Netskope Support'
+            - value: '257'
+              newvalue: 'Auto-update failed. Check logs/publisher_wizard.log'
+            - value: '258'
+              newvalue: 'Auto-update failed due to timeout.'
+            - value: '259'
+              newvalue: 'Reconnection failed due to timeout.'
+            - value: '512'
+              newvalue: 'Host OS update failed'
+            - value: '513'
+              newvalue: 'Auto-update failed while upgrading Docker engine'
+            - value: '514'
+              newvalue: 'Host OS update failed.'
+            - value: '515'
+              newvalue: 'Host OS update failed.'
+            - value: '516'
+              newvalue: 'Host OS update failed.'
+            - value: '517'
+              newvalue: 'Host OS update failed.'
+            - value: '518'
+              newvalue: 'Host OS update failed.'
+            - value: '519'
+              newvalue: 'Not enough disk space for the publisher Host OS update.'
+            - value: '768'
+              newvalue: 'Auto-update failed'
+            - value: '769'
+              newvalue: 'Auto-update failed while downloading docker image'
+            - value: '770'
+              newvalue: 'Newly downloaded version is the same'
+            - value: '771'
+              newvalue: 'Auto-update failed while attempting to stop the existing Publish'
+            - value: '773'
+              newvalue: 'Auto-update failed while attempting to install the Publisher UI'
+            - value: '774'
+              newvalue: 'Publisher auto-update failed. Check logs/publisher_wizard.log'
+            - value: '775'
+              newvalue: 'Publisher auto-update failed. Check logs/publisher_wizard.log'
         - uuid: 9fcd6573de5a434582efa9d59a3859ce
           name: True-False
           mappings:
@@ -1104,9 +1151,45 @@ zabbix_export:
           name: 'Publisher Upgrade Error'
           mappings:
             - value: '0'
-              newvalue: NoError
+              newvalue: 'Publisher is up-to-date.'
+            - value: '256'
+              newvalue: 'Auto-update failed. Contact Netskope Support'
+            - value: '257'
+              newvalue: 'Auto-update failed. Check logs/publisher_wizard.log'
+            - value: '258'
+              newvalue: 'Auto-update failed due to timeout.'
+            - value: '259'
+              newvalue: 'Reconnection failed due to timeout.'
+            - value: '512'
+              newvalue: 'Host OS update failed'
+            - value: '513'
+              newvalue: 'Auto-update failed while upgrading Docker engine'
+            - value: '514'
+              newvalue: 'Host OS update failed.'
+            - value: '515'
+              newvalue: 'Host OS update failed.'
+            - value: '516'
+              newvalue: 'Host OS update failed.'
+            - value: '517'
+              newvalue: 'Host OS update failed.'
+            - value: '518'
+              newvalue: 'Host OS update failed.'
+            - value: '519'
+              newvalue: 'Not enough disk space for the publisher Host OS update.'
+            - value: '768'
+              newvalue: 'Auto-update failed'
+            - value: '769'
+              newvalue: 'Auto-update failed while downloading docker image'
             - value: '770'
               newvalue: 'Newly downloaded version is the same'
+            - value: '771'
+              newvalue: 'Auto-update failed while attempting to stop the existing Publish'
+            - value: '773'
+              newvalue: 'Auto-update failed while attempting to install the Publisher UI'
+            - value: '774'
+              newvalue: 'Publisher auto-update failed. Check logs/publisher_wizard.log'
+            - value: '775'
+              newvalue: 'Publisher auto-update failed. Check logs/publisher_wizard.log'
         - uuid: 553be71d2bdd47e181315cbfb9b554e7
           name: True-False
           mappings:
@@ -1562,6 +1645,8 @@ zabbix_export:
                   expression: 'last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.upgrade_error_code[{#NETSKOPE.PUBLISHER.ID}])<>0 and last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.upgrade_error_code[{#NETSKOPE.PUBLISHER.ID}])<>770'
                   name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] upgrade error'
                   opdata: 'code:{ITEM.LASTVALUE}'
+                  url_name: 'Netskope Docs Publisher Error Codes'
+                  url: 'https://docs.netskope.com/en/configure-publisher-auto-updates#error-codes-for-publisher-auto-update'
                   priority: WARNING
                   description: |
                     0 = No error code
@@ -1686,7 +1771,13 @@ zabbix_export:
                   expression: 'last(/Template Netskope Publishers by HTTPS SingleHost/netskope.infra.publisher.version_float[{#NETSKOPE.PUBLISHER.ID}])<{$NETSKOPE.PUBLISHER.MIN_VERSION}'
                   name: 'Publisher [{#NETSKOPE.PUBLISHER.NAME}] outdated (min version accepted v{$NETSKOPE.PUBLISHER.MIN_VERSION})'
                   opdata: 'actual version: {ITEM.LASTVALUE}'
+                  url_name: 'Netskope Documentation'
+                  url: 'https://docs.netskope.com/en/publisher-support-policy'
                   priority: WARNING
+                  description: |
+                    Netskope will support the latest (N) version and two previous versions (N-1 and N-2) of the Publisher software.
+                    
+                    For example, if the latest Publisher version is 107.0.0.1, Netskope will support versions 106.0.0.1, and 105.0.0.1. Support will not be offered for releases such as 104.0.0.1, etc. Updates for software defects and security vulnerabilities will only be introduced in new software versions. Netskope will not back port software updates to older supported versions. You should consider upgrading your Publishers to the latest version to take advantage of enhancements and security updates.
                   manual_close: 'YES'
           timeout: 10s
           url: '{$NETSKOPE.TENANTURL}/api/v2/infrastructure/publishers?fields=publisher_id,publisher_name,common_name'
@@ -1706,10 +1797,10 @@ zabbix_export:
         - macro: '{$NETSKOPE.APITOKEN}'
           description: 'Netskope Token'
         - macro: '{$NETSKOPE.PUBLISHER.LATENCY.WARNING_TRIGGER}'
-          value: '80'
+          value: '200'
           description: 'Value over it''s considered warning latency'
         - macro: '{$NETSKOPE.PUBLISHER.MIN_VERSION}'
-          value: '120'
+          value: '130'
           description: 'Minimum version of Publishers'
         - macro: '{$NETSKOPE.TENANTURL}'
           description: 'https://mytenant.eu.goskope.com'
@@ -1718,9 +1809,45 @@ zabbix_export:
           name: 'Publisher Upgrade Error'
           mappings:
             - value: '0'
-              newvalue: NoError
+              newvalue: 'Publisher is up-to-date.'
+            - value: '256'
+              newvalue: 'Auto-update failed. Contact Netskope Support'
+            - value: '257'
+              newvalue: 'Auto-update failed. Check logs/publisher_wizard.log'
+            - value: '258'
+              newvalue: 'Auto-update failed due to timeout.'
+            - value: '259'
+              newvalue: 'Reconnection failed due to timeout.'
+            - value: '512'
+              newvalue: 'Host OS update failed'
+            - value: '513'
+              newvalue: 'Auto-update failed while upgrading Docker engine'
+            - value: '514'
+              newvalue: 'Host OS update failed.'
+            - value: '515'
+              newvalue: 'Host OS update failed.'
+            - value: '516'
+              newvalue: 'Host OS update failed.'
+            - value: '517'
+              newvalue: 'Host OS update failed.'
+            - value: '518'
+              newvalue: 'Host OS update failed.'
+            - value: '519'
+              newvalue: 'Not enough disk space for the publisher Host OS update.'
+            - value: '768'
+              newvalue: 'Auto-update failed'
+            - value: '769'
+              newvalue: 'Auto-update failed while downloading docker image'
             - value: '770'
               newvalue: 'Newly downloaded version is the same'
+            - value: '771'
+              newvalue: 'Auto-update failed while attempting to stop the existing Publish'
+            - value: '773'
+              newvalue: 'Auto-update failed while attempting to install the Publisher UI'
+            - value: '774'
+              newvalue: 'Publisher auto-update failed. Check logs/publisher_wizard.log'
+            - value: '775'
+              newvalue: 'Publisher auto-update failed. Check logs/publisher_wizard.log'
         - uuid: 934802f9b705476fb3782c537c004778
           name: True-False
           mappings:
