@@ -55,7 +55,7 @@ zabbix_export:
           triggers:
             - uuid: 9e092daa48c542e289631d43436a6bee
               expression: 'nodata(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_tokens.raw,20m)=1'
-              name: 'No Publishers data for more than 20min'
+              name: 'No EnrollmentToken data for more than 20min'
               priority: DISASTER
               description: 'No data from API. Check token or url'
       discovery_rules:
@@ -227,6 +227,13 @@ zabbix_export:
                   value: 'Netskope EnrollToken'
                 - tag: Application
                   value: 'Netskope EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}'
+              trigger_prototypes:
+                - uuid: 93a435fb7ca648d4adc82b56acc845ec
+                  expression: 'change(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_token.valid_till[{#NETSKOPE.ENROLLMENT_TOKEN.ID}])<>0'
+                  recovery_mode: NONE
+                  name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID} expiration date changed'
+                  priority: AVERAGE
+                  manual_close: 'YES'
             - uuid: 382b69c64b514729b7494e84c3b3331c
               name: 'EnrollToken {#NETSKOPE.ENROLLMENT_TOKEN.ID}: Raw data'
               type: DEPENDENT
@@ -259,7 +266,7 @@ zabbix_export:
                   priority: DISASTER
                   description: 'If the token is deleted then will be removed automatically after 6h.'
                   dependencies:
-                    - name: 'No Publishers data for more than 20min'
+                    - name: 'No EnrollmentToken data for more than 20min'
                       expression: 'nodata(/Template Netskope Enrollment Tokens by HTTPS/netskope.enrollment_tokens.raw,20m)=1'
           timeout: 10s
           url: '{$NETSKOPE.TENANTURL}/api/v2/enrollment/tokenset'
